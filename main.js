@@ -1,4 +1,24 @@
-document.getElementById('generate-btn').addEventListener('click', generateLottoNumbers);
+const themeToggle = document.getElementById('theme-toggle');
+const root = document.documentElement;
+
+const savedTheme = localStorage.getItem('theme');
+const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
+
+setTheme(initialTheme);
+
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        const nextTheme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+        setTheme(nextTheme);
+        localStorage.setItem('theme', nextTheme);
+    });
+}
+
+const generateButton = document.getElementById('generate-btn');
+if (generateButton) {
+    generateButton.addEventListener('click', generateLottoNumbers);
+}
 
 function generateLottoNumbers() {
     const numbersContainer = document.getElementById('lotto-numbers');
@@ -27,4 +47,13 @@ function getNumberColor(number) {
     if (number <= 30) return '#ff7272'; // Red
     if (number <= 40) return '#aaa';    // Gray
     return '#b0d840';      // Green
+}
+
+function setTheme(theme) {
+    root.dataset.theme = theme;
+    if (themeToggle) {
+        const isDark = theme === 'dark';
+        themeToggle.setAttribute('aria-pressed', String(isDark));
+        themeToggle.textContent = isDark ? 'Light mode' : 'Dark mode';
+    }
 }
