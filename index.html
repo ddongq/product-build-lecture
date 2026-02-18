@@ -1,21 +1,722 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lotto Number Generator</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>프리미엄 로또 추천기</title>
+<meta name="description" content="로또 6/45 추천 + 5세트 생성 + 보너스 + 행운지수 + 저장 + 통계/확률 안내" />
+
+<style>
+  :root{
+    --bg1:#667eea;
+    --bg2:#764ba2;
+    --card:#ffffff;
+    --text:#111827;
+    --muted:#6b7280;
+    --line:#e5e7eb;
+    --shadow: 0 30px 80px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:-apple-system, BlinkMacSystemFont, "Noto Sans KR", system-ui, sans-serif;
+    min-height:100vh;
+    background: linear-gradient(135deg,var(--bg1),var(--bg2));
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px 14px;
+    color:var(--text);
+  }
+
+  .card{
+    width:980px;
+    max-width:100%;
+    background:rgba(255,255,255,.92);
+    border-radius:24px;
+    padding:26px;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.25);
+  }
+
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:14px;
+  }
+  h1{
+    margin:0;
+    font-size:26px;
+    letter-spacing:-.2px;
+  }
+  .sub{
+    margin-top:6px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.5;
+  }
+
+  .controls{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:flex-end;
+  }
+  button{
+    border:none;
+    color:white;
+    padding:12px 16px;
+    font-size:14px;
+    border-radius:14px;
+    cursor:pointer;
+    font-weight:800;
+    box-shadow:0 10px 20px rgba(0,0,0,.18);
+    transition:.15s ease;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    user-select:none;
+  }
+  button:hover{transform:translateY(-2px)}
+  button:active{transform:translateY(1px)}
+  .primary{background:linear-gradient(135deg,#ff9966,#ff5e62)}
+  .secondary{background:linear-gradient(135deg,#7aa2ff,#45d6b6)}
+  .ghost{
+    background:rgba(17,24,39,.08);
+    color:#111827;
+    box-shadow:none;
+    border:1px solid rgba(17,24,39,.10);
+    font-weight:700;
+  }
+  .danger{
+    background:linear-gradient(135deg,#ff6b6b,#ff3b3b);
+  }
+
+  .layout{
+    display:grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap:14px;
+    margin-top:10px;
+  }
+
+  .panel{
+    background:rgba(255,255,255,.9);
+    border:1px solid rgba(17,24,39,.10);
+    border-radius:18px;
+    padding:16px;
+  }
+  .panel h2{
+    margin:0 0 10px;
+    font-size:15px;
+    letter-spacing:-.1px;
+  }
+  .muted{color:var(--muted); font-size:13px}
+  .row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  /* 세트 카드 */
+  .sets{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap:10px;
+  }
+  .set{
+    border:1px solid rgba(17,24,39,.10);
+    background:rgba(255,255,255,.75);
+    border-radius:16px;
+    padding:12px;
+  }
+  .setTop{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+  .badge{
+    font-size:12px;
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid rgba(17,24,39,.10);
+    background:rgba(17,24,39,.04);
+    color:#111827;
+    font-weight:700;
+  }
+
+  .balls{
+    display:flex;
+    justify-content:flex-start;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  /* 로또 공 */
+  .ball{
+    width:54px;
+    height:54px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:900;
+    font-size:18px;
+    color:white;
+    box-shadow:
+      inset -6px -10px 18px rgba(0,0,0,.22),
+      inset 6px 8px 18px rgba(255,255,255,.30),
+      0 8px 18px rgba(0,0,0,.20);
+    transform:scale(0);
+    animation:pop .42s forwards;
+  }
+  .ball.bonus{
+    outline: 3px solid rgba(17,24,39,.15);
+    position:relative;
+  }
+  .ball.bonus::after{
+    content:"BONUS";
+    position:absolute;
+    bottom:-16px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:9px;
+    font-weight:900;
+    color:rgba(17,24,39,.60);
+    letter-spacing:.6px;
+  }
+
+  @keyframes pop{
+    0%{transform:scale(0)}
+    80%{transform:scale(1.15)}
+    100%{transform:scale(1)}
+  }
+
+  .setText{
+    margin-top:10px;
+    color:#374151;
+    font-weight:800;
+    font-size:13px;
+    word-break:break-word;
+  }
+
+  /* 행운지수 */
+  .luckWrap{
+    display:grid;
+    gap:10px;
+  }
+  .luckCard{
+    border:1px solid rgba(17,24,39,.10);
+    background:rgba(255,255,255,.75);
+    border-radius:16px;
+    padding:12px;
+  }
+  .meter{
+    height:12px;
+    border-radius:999px;
+    background:rgba(17,24,39,.08);
+    overflow:hidden;
+    margin-top:8px;
+  }
+  .meter > div{
+    height:100%;
+    width:0%;
+    border-radius:999px;
+    background: linear-gradient(90deg,#7aa2ff,#45d6b6,#ff9966);
+    transition: width .45s ease;
+  }
+  .luckLine{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:baseline;
+  }
+  .luckScore{
+    font-size:20px;
+    font-weight:1000;
+    letter-spacing:-.2px;
+  }
+
+  /* 저장/기록 */
+  .history{
+    max-height:340px;
+    overflow:auto;
+    padding-right:6px;
+  }
+  .historyItem{
+    border:1px solid rgba(17,24,39,.10);
+    background:rgba(255,255,255,.75);
+    border-radius:14px;
+    padding:10px;
+    margin-bottom:8px;
+  }
+  .historyItemTop{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:6px;
+  }
+  .tinyBtns{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .tiny{
+    padding:8px 10px;
+    font-size:12px;
+    border-radius:12px;
+    font-weight:800;
+  }
+
+  /* 확률 안내 */
+  .note{
+    border-top:1px solid rgba(17,24,39,.10);
+    margin-top:12px;
+    padding-top:12px;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.55;
+  }
+  code{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size:12px;
+    color:#111827;
+    background:rgba(17,24,39,.06);
+    padding:2px 6px;
+    border-radius:8px;
+  }
+
+  .toast{
+    position:fixed;
+    left:50%; bottom:18px;
+    transform:translateX(-50%);
+    background: rgba(255,255,255,.95);
+    border:1px solid rgba(17,24,39,.10);
+    color:#111827;
+    padding:10px 12px;
+    border-radius:14px;
+    font-size:13px;
+    opacity:0;
+    pointer-events:none;
+    transition:.2s ease;
+    box-shadow: 0 12px 40px rgba(0,0,0,.25);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px);}
+
+  @media (max-width: 920px){
+    .layout{grid-template-columns:1fr}
+    .balls{justify-content:flex-start}
+    .ball{width:50px;height:50px}
+  }
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="top-bar">
-            <h1>Lotto Number Generator</h1>
-            <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">
-                Dark mode
-            </button>
-        </div>
-        <lotto-generator></lotto-generator>
+
+<div class="card">
+  <header>
+    <div>
+      <h1>🎯 프리미엄 로또 추천기</h1>
+      <div class="sub">
+        버튼 한 번에 <b>최대 5세트</b> 생성 · <b>보너스 번호</b> 포함 · <b>행운지수</b> · <b>저장/복사</b> · <b>확률 안내</b><br/>
+        (참고) 로또는 확률 게임이니 재미로만!
+      </div>
     </div>
-    <script src="main.js"></script>
+
+    <div class="controls">
+      <button class="primary" id="btn1">🎲 1세트 추천</button>
+      <button class="secondary" id="btn5">✨ 5세트 한 번에</button>
+      <button class="ghost" id="btnCopyAll">📋 전체 복사</button>
+      <button class="danger" id="btnClear">🧹 기록 지우기</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- 왼쪽: 추천 결과 -->
+    <section class="panel" aria-label="추천 결과">
+      <div class="row">
+        <h2 style="margin:0">추천 결과</h2>
+        <div class="muted" id="stamp"></div>
+      </div>
+
+      <div class="sets" id="sets"></div>
+
+      <div class="note">
+        <b>확률 안내</b><br/>
+        로또 6/45의 총 조합 수는 <code>C(45,6)=8,145,060</code> 입니다. 즉 1등 확률은 약 <code>1 / 8,145,060</code>.<br/>
+        5세트를 사면 “당첨 확률이 5배”가 아니라, 정확히는 <code>5 / 8,145,060</code> (약 0.000061%)로 <b>아주 조금</b> 증가합니다.
+      </div>
+    </section>
+
+    <!-- 오른쪽: 행운지수 + 기록 -->
+    <aside class="panel" aria-label="행운지수 및 기록">
+      <div class="luckWrap">
+        <div class="luckCard">
+          <div class="luckLine">
+            <div>
+              <div style="font-weight:900">🍀 오늘의 행운지수</div>
+              <div class="muted">추천된 번호 패턴을 기반으로 “재미용” 점수</div>
+            </div>
+            <div class="luckScore" id="luckScore">-</div>
+          </div>
+          <div class="meter" aria-hidden="true"><div id="luckBar"></div></div>
+          <div class="muted" style="margin-top:8px" id="luckText">번호를 생성하면 표시됩니다.</div>
+        </div>
+
+        <div class="luckCard">
+          <div class="row" style="margin-bottom:8px">
+            <div style="font-weight:900">🕘 최근 추천 기록</div>
+            <div class="muted" id="histCount"></div>
+          </div>
+
+          <div class="history" id="history"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="toast" id="toast">복사 완료!</div>
+
+<script>
+  // ===== 설정 =====
+  const HISTORY_KEY = "lotto_premium_history_v2";
+  const MAX_HISTORY = 20;
+
+  // ===== DOM =====
+  const $sets = document.getElementById("sets");
+  const $stamp = document.getElementById("stamp");
+  const $history = document.getElementById("history");
+  const $histCount = document.getElementById("histCount");
+  const $luckScore = document.getElementById("luckScore");
+  const $luckBar = document.getElementById("luckBar");
+  const $luckText = document.getElementById("luckText");
+  const $toast = document.getElementById("toast");
+
+  // ===== 유틸 =====
+  function showToast(msg){
+    $toast.textContent = msg;
+    $toast.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> $toast.classList.remove("show"), 1200);
+  }
+
+  function formatStamp(d=new Date()){
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const dd = String(d.getDate()).padStart(2,"0");
+    const hh = String(d.getHours()).padStart(2,"0");
+    const mi = String(d.getMinutes()).padStart(2,"0");
+    return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+  }
+
+  // 로또 색상(한국 로또 흔한 컬러 구분)
+  function getColor(n){
+    if(n<=10) return "#fbc400";   // 노랑
+    if(n<=20) return "#69c8f2";   // 파랑
+    if(n<=30) return "#ff7272";   // 빨강
+    if(n<=40) return "#aaaaaa";   // 회색
+    return "#b0d840";            // 초록
+  }
+
+  // 6개 + 보너스(중복없음)
+  function pickSet(){
+    const set = new Set();
+    while(set.size < 7){
+      set.add(Math.floor(Math.random()*45)+1);
+    }
+    const arr = Array.from(set);
+    const main = arr.slice(0,6).sort((a,b)=>a-b);
+    const bonus = arr[6];
+    // bonus가 main에 포함될 수 없도록 set.size가 7이라 안전
+    return { main, bonus };
+  }
+
+  function pickMany(count){
+    const sets = [];
+    for(let i=0;i<count;i++) sets.push(pickSet());
+    return sets;
+  }
+
+  // ===== 렌더 =====
+  function renderSets(sets){
+    $sets.innerHTML = "";
+
+    sets.forEach((s, idx)=>{
+      const wrap = document.createElement("div");
+      wrap.className = "set";
+
+      const top = document.createElement("div");
+      top.className = "setTop";
+
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = `SET ${idx+1}`;
+
+      const right = document.createElement("span");
+      right.className = "muted";
+      right.textContent = `보너스 포함`;
+
+      top.appendChild(badge);
+      top.appendChild(right);
+
+      const balls = document.createElement("div");
+      balls.className = "balls";
+
+      // main 6개
+      s.main.forEach((n, i)=>{
+        const b = document.createElement("div");
+        b.className = "ball";
+        b.textContent = n;
+        b.style.background = getColor(n);
+        b.style.animationDelay = (i*0.06) + "s";
+        balls.appendChild(b);
+      });
+
+      // bonus 1개
+      const bonusBall = document.createElement("div");
+      bonusBall.className = "ball bonus";
+      bonusBall.textContent = s.bonus;
+      bonusBall.style.background = getColor(s.bonus);
+      bonusBall.style.animationDelay = (6*0.06) + "s";
+      balls.appendChild(bonusBall);
+
+      const text = document.createElement("div");
+      text.className = "setText";
+      text.textContent = `추천: ${s.main.join(", ")}  |  보너스: ${s.bonus}`;
+
+      wrap.appendChild(top);
+      wrap.appendChild(balls);
+      wrap.appendChild(text);
+
+      $sets.appendChild(wrap);
+    });
+  }
+
+  // ===== 행운지수(재미용) =====
+  function calcLuckScore(sets){
+    // 점수 요소(재미용): 분포 다양성/연속수 적당/합계 적당/홀짝 균형/색상(구간) 분포
+    // 각 세트별 점수(0~100) 계산 후 평균
+    const scores = sets.map(s => scoreOne(s.main, s.bonus));
+    const avg = Math.round(scores.reduce((a,b)=>a+b,0) / scores.length);
+    return { avg, scores };
+  }
+
+  function scoreOne(main, bonus){
+    const nums = [...main, bonus];
+
+    // 1) 합계(권장 중앙 근처를 선호한다고 가정): 6개 합계 평균은 대략 138 근처(대충).
+    const sum = main.reduce((a,b)=>a+b,0);
+    const sumScore = clamp(100 - Math.abs(sum - 138) * 1.2, 0, 100);
+
+    // 2) 홀짝 균형(3:3이 최고)
+    const odds = main.filter(n=>n%2===1).length;
+    const even = 6 - odds;
+    const balanceScore = (odds===3) ? 100 : (odds===2||odds===4) ? 70 : (odds===1||odds===5) ? 40 : 15;
+
+    // 3) 연속수(0~1쌍 정도는 OK, 너무 많으면 감점)
+    const sorted = [...main].sort((a,b)=>a-b);
+    let consecutivePairs = 0;
+    for(let i=0;i<sorted.length-1;i++){
+      if(sorted[i+1] - sorted[i] === 1) consecutivePairs++;
+    }
+    const consecScore = consecutivePairs===0 ? 90 : consecutivePairs===1 ? 100 : consecutivePairs===2 ? 70 : consecutivePairs===3 ? 35 : 10;
+
+    // 4) 구간 분포(1~10, 11~20, 21~30, 31~40, 41~45) 다양할수록 가산
+    const buckets = [0,0,0,0,0];
+    main.forEach(n=>{
+      if(n<=10) buckets[0]++; else if(n<=20) buckets[1]++; else if(n<=30) buckets[2]++; else if(n<=40) buckets[3]++; else buckets[4]++;
+    });
+    const distinct = buckets.filter(x=>x>0).length;
+    const distScore = distinct===5 ? 100 : distinct===4 ? 85 : distinct===3 ? 65 : distinct===2 ? 40 : 20;
+
+    // 5) 보너스가 메인 평균 근처면 살짝 가산(그냥 재미)
+    const mean = sum / 6;
+    const bonusScore = clamp(100 - Math.abs(bonus - mean) * 4, 0, 100);
+
+    // 가중 평균
+    const total = Math.round(
+      sumScore*0.22 +
+      balanceScore*0.22 +
+      consecScore*0.20 +
+      distScore*0.20 +
+      bonusScore*0.16
+    );
+    return clamp(total, 0, 100);
+  }
+
+  function luckLabel(score){
+    if(score >= 85) return "오늘 느낌 좋다. 그냥 재미로 한 장 더? 😎";
+    if(score >= 70) return "균형 괜찮음. 무난하게 가자 🙂";
+    if(score >= 55) return "평균적. 여러 세트 중 골라 쓰기 추천 🙂";
+    if(score >= 40) return "조금 치우침. 다른 세트도 같이 보자 🧐";
+    return "패턴이 한쪽으로 몰림. 다시 한 번 눌러보자 😅";
+  }
+
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+  function renderLuck(sets){
+    const { avg } = calcLuckScore(sets);
+    $luckScore.textContent = avg;
+    $luckBar.style.width = avg + "%";
+    $luckText.textContent = luckLabel(avg);
+  }
+
+  // ===== 기록 저장 =====
+  function loadHistory(){
+    try{
+      const raw = localStorage.getItem(HISTORY_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    }catch{
+      return [];
+    }
+  }
+  function saveHistory(arr){
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(arr.slice(0, MAX_HISTORY)));
+  }
+
+  function setsToPlainText(sets){
+    // 복사용 텍스트
+    // SET 1: 1,2,3,4,5,6 | B: 7
+    return sets.map((s,i)=>`SET ${i+1}: ${s.main.join(", ")} | B: ${s.bonus}`).join("\n");
+  }
+
+  function addHistory(sets){
+    const item = {
+      time: formatStamp(),
+      sets
+    };
+    const hist = loadHistory();
+    hist.unshift(item);
+    saveHistory(hist);
+    renderHistory();
+  }
+
+  function renderHistory(){
+    const hist = loadHistory();
+    $histCount.textContent = hist.length ? `${hist.length}개 저장됨` : "저장된 기록 없음";
+    $history.innerHTML = "";
+
+    if(hist.length === 0){
+      const div = document.createElement("div");
+      div.className = "muted";
+      div.textContent = "아직 저장된 기록이 없어요. 번호를 생성해 보세요.";
+      $history.appendChild(div);
+      return;
+    }
+
+    hist.forEach((h, idx)=>{
+      const item = document.createElement("div");
+      item.className = "historyItem";
+
+      const top = document.createElement("div");
+      top.className = "historyItemTop";
+
+      const left = document.createElement("div");
+      left.innerHTML = `<div style="font-weight:900">#${idx+1} · ${h.time}</div>
+                        <div class="muted">${h.sets.length}세트</div>`;
+
+      const btns = document.createElement("div");
+      btns.className = "tinyBtns";
+
+      const b1 = document.createElement("button");
+      b1.className = "ghost tiny";
+      b1.textContent = "불러오기";
+      b1.onclick = ()=>{
+        window.__currentSets = h.sets;
+        renderSets(h.sets);
+        renderLuck(h.sets);
+        $stamp.textContent = "생성 시각: " + h.time + " (기록 불러옴)";
+        showToast("기록을 불러왔어요.");
+      };
+
+      const b2 = document.createElement("button");
+      b2.className = "ghost tiny";
+      b2.textContent = "복사";
+      b2.onclick = ()=> copyText(setsToPlainText(h.sets));
+
+      btns.appendChild(b1);
+      btns.appendChild(b2);
+
+      top.appendChild(left);
+      top.appendChild(btns);
+
+      const preview = document.createElement("div");
+      preview.className = "muted";
+      preview.style.marginTop = "6px";
+      preview.style.whiteSpace = "pre-line";
+      preview.textContent = setsToPlainText(h.sets);
+
+      item.appendChild(top);
+      item.appendChild(preview);
+      $history.appendChild(item);
+    });
+  }
+
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      showToast("복사 완료!");
+    }catch{
+      // fallback
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      showToast("복사 완료!");
+    }
+  }
+
+  // ===== 생성 흐름 =====
+  function generate(count){
+    const sets = pickMany(count);
+    window.__currentSets = sets;
+
+    renderSets(sets);
+    renderLuck(sets);
+
+    const now = formatStamp();
+    $stamp.textContent = "생성 시각: " + now;
+
+    addHistory(sets);
+  }
+
+  // ===== 이벤트 =====
+  document.getElementById("btn1").addEventListener("click", ()=>generate(1));
+  document.getElementById("btn5").addEventListener("click", ()=>generate(5));
+
+  document.getElementById("btnCopyAll").addEventListener("click", ()=>{
+    const sets = window.__currentSets;
+    if(!sets || sets.length===0){
+      showToast("먼저 번호를 생성해 주세요.");
+      return;
+    }
+    copyText(setsToPlainText(sets));
+  });
+
+  document.getElementById("btnClear").addEventListener("click", ()=>{
+    localStorage.removeItem(HISTORY_KEY);
+    renderHistory();
+    showToast("기록을 지웠어요.");
+  });
+
+  // ===== 초기 =====
+  renderHistory();
+  generate(1);
+</script>
+
 </body>
 </html>
